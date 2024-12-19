@@ -1,14 +1,19 @@
+# https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/
+# Application Verifier for Windows
+# Windows App Certification Kit 
+
 # Set-ExecutionPolicy RemoteSigned
 # Set-ExecutionPolicy Restricted
 
 # DEFINE VARIABLES
 $folderPath = "C:\PresteetoPc_Software_9"
-$execName = "LocatorApp.exe"
+$execName = "Test.exe"
 $srcPath = $PSScriptRoot + "\" + $execName
 $rootUser = "PresteetoPc"
 $taskName = "PresteetoPcLocatorAppScheduler"
 $taskTriggerTime = "10:00"
 $password = "PresteetoPcSoftwareLocatorApp12182024"
+
 
 function Create-PresteetoPc_SoftwareFolder {
     param (
@@ -18,12 +23,34 @@ function Create-PresteetoPc_SoftwareFolder {
     New-Item -ItemType Directory -Path $FolderPath -Force | Out-Null
 }
 
+
 function Sign-LocatorAppExecutable {
-    $cert = New-SelfSignedCertificate -Subject "PresteetoPc_LocatorApp" -CertStoreLocation $PSScriptRoot -Type CodeSigningCert
-    $pwd = ConvertTo-SecureString -String $password -Force -AsPlainText
-    Export-PfxCertificate -Cert $cert -FilePath PresteetoPc.pfx -Password $pwd
-    ## signtool.exe sign /f PresteetoPc.pfx /p $password LocatorApp.exe
+    param(
+        [string]$ExecName,
+        [string]$Password,
+        [string]$CertFileName,
+        [string]$Subject,
+        [string]$CertLocation
+    )
+
+    $signToolPath = Join-Path -Path $PSScriptRoot -ChildPath "signtool.exe"
+    if (Test-Path $signToolPath) {
+        $cert = New-SelfSignedCertificate -Subject $Subject -CertStoreLocation $CertLocation -Type CodeSigningCert
+        $pwd = ConvertTo-SecureString -String $Password -Force -AsPlainText
+        Export-PfxCertificate -Cert $cert -FilePath $CertFileName -Password $pwd    
+        try {
+            Start-Process -FilePath $signToolPath -ArgumentList "sign /f ${CertFileName} /fd sha1 /p ${Password} $ExecName"
+        }
+        catch {
+            Write-Error "Failed to sign executable please contact developer"
+            exit 1
+        }
+    } else {
+        Write-Error "signtool.exe needs to be in the same directory as powershell script root"
+        exit 1
+    }
 }
+
 
 function Copy-ExecutableToSecureFolder {
     param (
@@ -63,8 +90,6 @@ function Create-SecuredProtectedFolder {
     )
 
     try {
-        
-        
         Update-FolderPermissions -ContentPath $FolderPath
         Write-Host "Secured Folder"
     }
@@ -159,4 +184,5 @@ function Install-LocatorApp {
 }
 
 
-Install-LocatorApp
+#Install-LocatorApp
+Sign-LocatorAppExecutable -ExecName $execName -CertFileName "PresteetoPc.pfx" -Subject "PresteetoPc_LocatorApp" -CertLocation $PSScriptRoot -Password "PresteetoPc_Software20241208"
