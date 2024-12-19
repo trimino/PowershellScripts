@@ -1,8 +1,3 @@
-# https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/
-# Application Verifier For Windows
-# Windows App Certification Kit
-
-# PS permissions
 # Set-ExecutionPolicy RemoteSigned
 # Set-ExecutionPolicy Restricted
 
@@ -13,7 +8,7 @@ $srcPath = $PSScriptRoot + "\" + $execName
 $rootUser = "PresteetoPc"
 $taskName = "PresteetoPcLocatorAppScheduler"
 $taskTriggerTime = "10:00"
-
+$password = "PresteetoPcSoftwareLocatorApp12182024"
 
 function Create-PresteetoPc_SoftwareFolder {
     param (
@@ -23,6 +18,12 @@ function Create-PresteetoPc_SoftwareFolder {
     New-Item -ItemType Directory -Path $FolderPath -Force | Out-Null
 }
 
+function Sign-LocatorAppExecutable {
+    $cert = New-SelfSignedCertificate -Subject "PresteetoPc_LocatorApp" -CertStoreLocation $PSScriptRoot -Type CodeSigningCert
+    $pwd = ConvertTo-SecureString -String $password -Force -AsPlainText
+    Export-PfxCertificate -Cert $cert -FilePath PresteetoPc.pfx -Password $pwd
+    ## signtool.exe sign /f PresteetoPc.pfx /p $password LocatorApp.exe
+}
 
 function Copy-ExecutableToSecureFolder {
     param (
