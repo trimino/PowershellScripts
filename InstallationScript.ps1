@@ -1,3 +1,8 @@
+# https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/
+# Application Verifier For Windows
+# Windows App Certification Kit
+
+# PS permissions
 # Set-ExecutionPolicy RemoteSigned
 # Set-ExecutionPolicy Restricted
 
