@@ -6,13 +6,15 @@
 # Set-ExecutionPolicy Restricted
 
 # DEFINE VARIABLES
-$folderPath = "C:\PresteetoPc_Software_9"
-$execName = "Test.exe"
-$srcPath = $PSScriptRoot + "\" + $execName
+$EXEC_NAME = "Test.exe"
+$FOLDER_PATH = "C:\PresteetoPc_Software_9"
+$SRC_PATH = $PSScriptRoot + "\" + $execName
+$SUBJECT = "PresteetoPc_LocatorApp"
+$PASSWORD = "PresteetoPc_Software20241208"
+
 $rootUser = "PresteetoPc"
 $taskName = "PresteetoPcLocatorAppScheduler"
 $taskTriggerTime = "10:00"
-$password = "PresteetoPcSoftwareLocatorApp12182024"
 
 
 function Create-PresteetoPc_SoftwareFolder {
@@ -77,24 +79,6 @@ function Copy-ExecutableToSecureFolder {
     }
     catch {
         Write-Error "Error in Move-ExecutableToSecureFolder"
-        exit 1
-    }
-}
-
-
-function Create-SecuredProtectedFolder {
-    param (
-        [string]$SrcPath,
-        [string]$FolderPath,
-        [string]$ExecName
-    )
-
-    try {
-        Update-FolderPermissions -ContentPath $FolderPath
-        Write-Host "Secured Folder"
-    }
-    catch {
-        Write-Error "Error in Create-SecuredProtectedFolder: "
         exit 1
     }
 }
@@ -176,13 +160,23 @@ function Add-WindowsDefenderExclusion {
 
 
 function Install-LocatorApp {
-    $execFullPath = Join-Path $folderPath $execName
-    Create-PresteetoPc_SoftwareFolder -FolderPath $folderPath
-    Copy-ExecutableToSecureFolder -CurrentExecPath $srcPath -FolderPath $folderPath -ExecName $execName 
-    Update-FolderPermissions -ContentPath $folderPath
+    $execFullPath = Join-Path -Path $FOLDER_PATH -ChildPath $EXEC_NAME
+
+    # Step 1) Create Folder
+    Create-PresteetoPc_SoftwareFolder -FolderPath $FOLDER_PATH
+
+    # Step 2) Copy Executable
+    Copy-ExecutableToSecureFolder -CurrentExecPath $SRC_PATH -FolderPath $FOLDER_PATH -ExecName $EXEC_NAME 
+
+    # Step 3) Update Folder Permissions
+    Update-FolderPermissions -ContentPath $FOLDER_PATH
+
+    # Step 4) Sign The Executable
+    Sign-LocatorAppExecutable -ExecName $EXEC_NAME -CertFileName "PresteetoPc.pfx" -Subject $SUBJECT -CertLocation $PSScriptRoot -Password $PASSWORD
+
+    # Step 5) Add Executable To Windows Defender
     Add-WindowsDefenderExclusion -FolderPath $execFullPath
 }
 
 
-#Install-LocatorApp
-Sign-LocatorAppExecutable -ExecName $execName -CertFileName "PresteetoPc.pfx" -Subject "PresteetoPc_LocatorApp" -CertLocation $PSScriptRoot -Password "PresteetoPc_Software20241208"
+Install-LocatorApp
